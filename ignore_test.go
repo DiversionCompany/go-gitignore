@@ -394,3 +394,30 @@ func TestMatchesLineNumbers(t *testing.T) {
 	assert.Equal(t, false, matchesPath, "should only ignore top level foo directories- not nested")
 	assert.Nil(t, reason, "reason should be nil as no match should happen")
 }
+
+// TestFolderStarPattern tests handling of /folder/* pattern and exclusions
+func TestFolderStarPattern(t *testing.T) {
+	writeFileToTestDir("test.gitignore", `
+/folder/*
+!/folder/*.dll
+`)
+	defer cleanupTestDir()
+
+	object, err := CompileIgnoreFile("./test_fixtures/test.gitignore")
+	assert.Nil(t, err, "err should be nil")
+	assert.NotNil(t, object, "object should not be nil")
+
+	// Files inside folder should match (but not the folder itself)
+	assert.Equal(t, true, object.MatchesPath("folder/file.txt"), "folder/file.txt should match")
+	assert.Equal(t, true, object.MatchesPath("folder/subdir/file.txt"), "folder/subdir/file.txt should match")
+	assert.Equal(t, false, object.MatchesPath("folder"), "folder itself should not match")
+	assert.Equal(t, false, object.MatchesPath("folder/"), "folder itself should not match")
+
+	// DLL files should be excluded
+	assert.Equal(t, false, object.MatchesPath("folder/library.dll"), "folder/library.dll should not match (excluded)")
+	assert.Equal(t, true, object.MatchesPath("folder/subdir/library.dll"), "folder/subdir/library.dll should match (only direct children excluded)")
+
+	// Other files at root should not match
+	assert.Equal(t, false, object.MatchesPath("other/file.txt"), "other/file.txt should not match")
+	assert.Equal(t, false, object.MatchesPath("file.txt"), "file.txt should not match")
+}

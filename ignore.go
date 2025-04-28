@@ -16,7 +16,7 @@ The summarized version of the same has been copied here:
  4. An optional prefix "!" which negates the pattern; any matching file
     excluded by a previous pattern will become included again. It is not
     possible to re-include a file if a parent directory of that file is
-    excluded. Git doesn’t list excluded directories for performance reasons,
+    excluded. Git doesn't list excluded directories for performance reasons,
     so any patterns on contained files have no effect, no matter where they
     are defined. Put a backslash ("\") in front of the first "!" for
     patterns that begin with a literal "!", for example, "\!important!.txt".
@@ -120,6 +120,13 @@ func getPatternFromLine(line string) (*regexp.Regexp, bool) {
 	line = regexp.MustCompile(`\*\*/`).ReplaceAllString(line, `(|.`+magicStar+`/)`)
 	line = regexp.MustCompile(`/\*\*`).ReplaceAllString(line, `(|/.`+magicStar+`)`)
 
+	// Check for "/*" pattern before applying general * transformation
+	var hasFolderStarSuffix bool
+	if strings.HasSuffix(line, "/*") {
+		hasFolderStarSuffix = true
+		line = strings.TrimSuffix(line, "/*")
+	}
+
 	// Handle escaping the "*" char
 	line = regexp.MustCompile(`\\\*`).ReplaceAllString(line, `\`+magicStar)
 	line = regexp.MustCompile(`\*`).ReplaceAllString(line, `([^/]*)`)
@@ -131,12 +138,10 @@ func getPatternFromLine(line string) (*regexp.Regexp, bool) {
 
 	// Temporary regex
 	var expr = ""
-	if strings.HasSuffix(line, "/*") {
+	if hasFolderStarSuffix {
 		// If the pattern ends with "/*", match files inside the folder but not the folder itself
-		line = strings.TrimSuffix(line, "/*")
 		expr = line + "/.+$"
 	} else if strings.HasSuffix(line, "/") {
-		// Directory matching only
 		expr = line + "(|.*)$"
 	} else {
 		expr = line + "(|/.*)$"
