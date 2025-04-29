@@ -420,4 +420,8 @@ func TestFolderStarPattern(t *testing.T) {
 	// Other files at root should not match
 	assert.Equal(t, false, object.MatchesPath("other/file.txt"), "other/file.txt should not match")
 	assert.Equal(t, false, object.MatchesPath("file.txt"), "file.txt should not match")
+
+	// Edge case: empty file names should not match
+	assert.Equal(t, false, object.MatchesPath("folder//"), "folder// should not match (empty file name)")
+	assert.Equal(t, false, object.MatchesPath("folder//subdir"), "folder//subdir should not match (path with empty segment)")
 }

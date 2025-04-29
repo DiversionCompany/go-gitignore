@@ -140,7 +140,9 @@ func getPatternFromLine(line string) (*regexp.Regexp, bool) {
 	var expr = ""
 	if hasFolderStarSuffix {
 		// If the pattern ends with "/*", match files inside the folder but not the folder itself
-		expr = line + "/.+$"
+		// The "/.+$" would match anything after the folder including just a slash, so we use "/[^/]+(/.*)?$" instead
+		// This ensures we have at least one non-slash character after the folder
+		expr = line + "/[^/]+(/.*)?$"
 	} else if strings.HasSuffix(line, "/") {
 		expr = line + "(|.*)$"
 	} else {
