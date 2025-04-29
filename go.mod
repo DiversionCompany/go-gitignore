@@ -1,4 +1,4 @@
-module github.com/noyber/go-gitignore
+module github.com/DiversionCompany/go-gitignore
 
 go 1.21
 
